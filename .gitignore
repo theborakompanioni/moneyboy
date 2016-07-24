@@ -1,0 +1,10 @@
+pom.xml.versionsBackup
+/application.pid
+.attach_pid*
+.resourceCache/
+.vertx/
+.idea/
+*.iml
+tmp/
+*.db
+target/
