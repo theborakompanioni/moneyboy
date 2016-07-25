@@ -1,42 +1,36 @@
 package com.github.theborakompanioni.moneta.rest;
 
-import com.github.theborakompanioni.moneta.ExchangeRateResponseImpl;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.ext.web.Router;
-import org.javamoney.moneta.FastMoney;
+import io.vertx.rxjava.ext.web.RoutingContext;
+import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
 import javax.money.CurrencyUnit;
-import javax.money.Monetary;
+import javax.money.UnknownCurrencyException;
 import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.MonetaryConversions;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static javax.money.Monetary.getCurrency;
 
+@Slf4j
 class ExchangeRateRouter {
 
-    private static ExchangeRateProvider rateProvider = MonetaryConversions.getExchangeRateProvider();
+    private static final ExchangeRateProvider rateProvider = MonetaryConversions.getExchangeRateProvider();
+
+    private static TargetParamTransformer toCurrencyUnit = new TargetParamTransformer();
 
     static Router create(Vertx vertx) {
-        Supplier<TreeSet<CurrencyUnit>> asTreeSet =
-                () -> Sets.newTreeSet(Comparator.comparing(CurrencyUnit::getCurrencyCode));
-
-        final List<CurrencyUnit> availableCurrencies = ImmutableList.copyOf(
-                Arrays.stream(Locale.getAvailableLocales())
-                        .map(Monetary::getCurrencies)
-                        .filter(currencies -> !currencies.isEmpty())
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toCollection(asTreeSet)));
-
         Router router = Router.router(vertx);
 
         router.route("/").handler(ctx -> {
@@ -49,44 +43,20 @@ class ExchangeRateRouter {
         });
 
         router.route("/latest").handler(ctx -> {
-            final String baseParam = Optional.ofNullable(ctx.request().getParam("base"))
-                    .orElse("EUR");
+            final Optional<CurrencyUnit> baseCurrency = baseParam(ctx);
+            if (!baseCurrency.isPresent()) {
+                ctx.fail(BAD_REQUEST.code());
+                return;
+            }
 
-            final CurrencyUnit baseCurrency = Monetary.getCurrency(baseParam);
+            final List<String> targetParams = ctx.request().params().getAll("target");
 
-            final FastMoney amount = FastMoney.of(1, baseCurrency);
-            Observable.from(ctx.request().params().getAll("target"))
-                    .flatMap(targetParam -> {
-                        try {
-                            return Observable.just(Monetary.getCurrency(targetParam));
-                        } catch (Exception e) {
-                            return Observable.empty();
-                        }
-                    })
-                    .switchIfEmpty(Observable.from(availableCurrencies))
-                    .filter(currency -> rateProvider.isAvailable(amount.getCurrency(), currency))
-                    .map(currency -> rateProvider.getCurrencyConversion(currency))
-                    .map(currencyConversion -> {
-                        try {
-                            return currencyConversion.getExchangeRate(amount);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .map(exchangeRate -> ExchangeRateResponseImpl.ExchangeRateImpl.builder()
-                            .factor(exchangeRate.getFactor().doubleValueExact())
-                            .base(exchangeRate.getBaseCurrency().getCurrencyCode())
-                            .target(exchangeRate.getCurrency().getCurrencyCode())
-                            .provider(exchangeRate.getContext().getProviderName())
-                            .derived(exchangeRate.isDerived())
-                            .type(exchangeRate.getContext().getRateType().name())
-                            .build())
-                    .toList()
-                    .map(rates -> ExchangeRateResponseImpl.builder()
-                            .base(baseCurrency.getCurrencyCode())
-                            .rates(rates)
-                            .build())
+            final ExchangeRateResponseTransformer toCurrentExchangeRate = ExchangeRateResponseTransformer
+                    .ofTodayWithSlidingWindow(rateProvider, baseCurrency.get());
+
+            Observable.from(targetParams)
+                    .compose(toCurrencyUnit)
+                    .compose(toCurrentExchangeRate)
                     .map(Json::encode)
                     .subscribe(json -> {
                         ctx.response().setStatusCode(OK.code());
@@ -94,10 +64,16 @@ class ExchangeRateRouter {
                     });
         });
 
-
         router.route("/:date").handler(ctx -> {
+            final Optional<CurrencyUnit> baseCurrency = baseParam(ctx);
+
+            if (!baseCurrency.isPresent()) {
+                ctx.fail(BAD_REQUEST.code());
+                return;
+            }
+
             final LocalDate now = LocalDate.now();
-            final LocalDate date = Optional.ofNullable(ctx.request().getParam("date"))
+            final LocalDate date = ofNullable(ctx.request().getParam("date"))
                     .map(val -> LocalDate.parse(val, DateTimeFormatter.ISO_DATE))
                     .orElse(now);
 
@@ -105,11 +81,31 @@ class ExchangeRateRouter {
                 ctx.fail(BAD_REQUEST.code());
                 return;
             }
+            final List<String> targetParams = ctx.request().params().getAll("target");
 
-            ctx.response().setStatusCode(ACCEPTED.code());
-            ctx.response().end(now.toString());
+            final ExchangeRateResponseTransformer toHistoryExchangeRate = ExchangeRateResponseTransformer
+                    .withSlidingWindow(rateProvider, baseCurrency.get(), date);
+
+            Observable.from(targetParams)
+                    .compose(toCurrencyUnit)
+                    .compose(toHistoryExchangeRate)
+                    .map(Json::encode)
+                    .subscribe(json -> {
+                        ctx.response().setStatusCode(OK.code());
+                        ctx.response().end(json);
+                    });
         });
 
         return router;
     }
+
+    private static Optional<CurrencyUnit> baseParam(RoutingContext ctx) {
+        try {
+            return of(getCurrency(ofNullable(ctx.request().getParam("base")).orElse("EUR")));
+        } catch (UnknownCurrencyException e) {
+            log.debug("Unknown currency: {}", e.getCurrencyCode());
+            return Optional.empty();
+        }
+    }
+
 }

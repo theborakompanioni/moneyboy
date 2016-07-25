@@ -1,5 +1,6 @@
 package com.github.theborakompanioni.moneta.rest;
 
+import com.google.common.net.MediaType;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
@@ -17,6 +18,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 
 @Slf4j
 public class RestServerVerticle extends AbstractVerticle {
+    private static final String JSON_TYPE = MediaType.JSON_UTF_8.withoutParameters().toString();
 
     private final String name = this.getClass().getSimpleName();
 
@@ -64,8 +66,8 @@ public class RestServerVerticle extends AbstractVerticle {
         router.route().handler(bodyHandler());
 
         router.route("/api")
-                .consumes("application/json")
-                .produces("application/json");
+                .consumes(JSON_TYPE)
+                .produces(JSON_TYPE);
 
         router.route("/api").handler(api());
         router.mountSubRouter("/api/exchangerate", ExchangeRateRouter.create(vertx));
@@ -108,7 +110,6 @@ public class RestServerVerticle extends AbstractVerticle {
 
     private Handler<RoutingContext> api() {
         return routingContext -> routingContext.response()
-                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
                 .end(new JsonObject().put("msg", "Hello World!").toString());
     }
 }
