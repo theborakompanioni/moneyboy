@@ -1,13 +1,12 @@
 package com.github.theborakompanioni.moneta.rest;
 
 import com.github.theborakompanioni.moneta.ExchangeRateResponseImpl;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.ext.web.Router;
-import io.vertx.rxjava.ext.web.RoutingContext;
 import org.javamoney.moneta.FastMoney;
 import rx.Observable;
 
@@ -18,7 +17,7 @@ import javax.money.convert.MonetaryConversions;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -28,17 +27,15 @@ class ExchangeRateRouter {
     private static ExchangeRateProvider rateProvider = MonetaryConversions.getExchangeRateProvider();
 
     static Router create(Vertx vertx) {
+        Supplier<TreeSet<CurrencyUnit>> asTreeSet =
+                () -> Sets.newTreeSet(Comparator.comparing(CurrencyUnit::getCurrencyCode));
+
         final List<CurrencyUnit> availableCurrencies = ImmutableList.copyOf(
                 Arrays.stream(Locale.getAvailableLocales())
                         .map(Monetary::getCurrencies)
                         .filter(currencies -> !currencies.isEmpty())
                         .flatMap(Collection::stream)
-                        .collect(Collectors.toSet()));
-
-        String currencyParamName = "currency";
-        Function<RoutingContext, Optional<String>> currencyParam = ctx ->
-                Optional.ofNullable(ctx.request().getParam(currencyParamName))
-                        .map(Strings::emptyToNull);
+                        .collect(Collectors.toCollection(asTreeSet)));
 
         Router router = Router.router(vertx);
 

@@ -39,7 +39,6 @@ public class MonetaClientTest {
         api = MonetaClients.create("http://localhost:" + portRest);
     }
 
-
     @AfterClass
     public static void tearDown(TestContext context) {
         vertx.close(context.asyncAssertSuccess());
@@ -54,7 +53,7 @@ public class MonetaClientTest {
     public void itShouldFetchApiEntry(TestContext context) {
         final Async async = context.async();
 
-        Observable.fromCallable(() -> MonetaClientTest.api.api())
+        Observable.just(MonetaClientTest.api.api())
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.get("msg"), is(equalTo("Hello World!")));
@@ -65,29 +64,33 @@ public class MonetaClientTest {
     public void itShouldFetchExchangeRate(TestContext context) {
         final Async async = context.async();
 
-        Observable.fromCallable(() -> api.exchangerateLatest())
+        Observable.just(api.exchangerateLatest())
                 .subscribe(next -> {
-                    assertThat(next, is(notNullValue()));
+                    assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getRates(), hasSize(greaterThan(30)));
 
                 }, context::fail, async::complete);
     }
 
     @Test
-    public void itShouldFetchExchangeRateWithParams(TestContext context) {
+    public void itShouldFetchExchangeRateWithTarget(TestContext context) {
         final Async async = context.async();
 
         Observable.just(api.exchangerateLatest("EUR", "USD"))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getRates(), hasSize(1));
+                    assertThat(next.getRates().get(0).getTarget(), is(equalTo("USD")));
+
                 }, context::fail, async::complete);
     }
 
     @Test
-    public void itShouldFetchExchangeRateWithParams2(TestContext context) {
+    public void itShouldFetchExchangeRateWithTargets(TestContext context) {
         final Async async = context.async();
 
-        final ImmutableList<String> targets = ImmutableList.of("USD", "GBP");
+        final ImmutableList<String> targets = ImmutableList.of("GBP", "EUR", "NZD", "RUB", "USD");
 
         Observable.just(api.exchangerateLatest("EUR", targets))
                 .subscribe(next -> {
