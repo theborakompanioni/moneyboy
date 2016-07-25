@@ -3,6 +3,7 @@ import com.github.theborakompanioni.moneta.MonetaClients;
 import com.github.theborakompanioni.moneta.MonetaVerticle;
 import com.google.common.collect.ImmutableList;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -67,12 +68,11 @@ public class MonetaClientTest {
     public void itShouldFetchExchangeRate(TestContext context) {
         final Async async = context.async();
 
-        Observable.just(api.exchangerateLatest())
+        Observable.just(api.latest())
                 .subscribe(next -> {
                     assertThat(next.getBase(), is(equalTo("EUR")));
                     assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getRates(), hasSize(greaterThan(30)));
-
                 }, context::fail, async::complete);
     }
 
@@ -80,13 +80,15 @@ public class MonetaClientTest {
     public void itShouldFetchExchangeRateWithTarget(TestContext context) {
         final Async async = context.async();
 
-        Observable.just(api.exchangerateLatest("EUR", "USD"))
+        Observable.just(api.latest("EUR", "USD"))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getBase(), is(equalTo("EUR")));
                     assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getRates(), hasSize(1));
                     assertThat(next.getRates().get(0).getTarget(), is(equalTo("USD")));
+
+                    log.info("{}", Json.encode(next));
 
                 }, context::fail, async::complete);
     }
@@ -97,7 +99,7 @@ public class MonetaClientTest {
 
         final ImmutableList<String> targets = ImmutableList.of("GBP", "EUR", "NZD", "RUB", "USD");
 
-        Observable.just(api.exchangerateLatest("EUR", targets))
+        Observable.just(api.latest("EUR", targets))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getDate(), is(equalTo(LocalDate.now())));
@@ -116,7 +118,7 @@ public class MonetaClientTest {
 
         final ImmutableList<String> targets = ImmutableList.of("GBP", "USD");
 
-        Observable.just(api.exchangeRateOnDate(date, "EUR", targets))
+        Observable.just(api.historic(date, "EUR", targets))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getBase(), is(equalTo("EUR")));
