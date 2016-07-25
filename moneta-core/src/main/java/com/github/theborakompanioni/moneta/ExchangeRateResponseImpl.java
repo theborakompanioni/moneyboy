@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
 import lombok.Value;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Value
@@ -16,6 +17,7 @@ public class ExchangeRateResponseImpl implements ExchangeRateResponse {
     }
 
     private String base;
+    private LocalDate date;
     private List<? extends ExchangeRate> rates;
 
     @Value

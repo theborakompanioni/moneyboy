@@ -3,6 +3,7 @@ package com.github.theborakompanioni.moneta;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.Feign;
 import feign.Retryer;
 import feign.jackson.JacksonDecoder;
@@ -27,7 +28,7 @@ public final class MonetaClients {
 
     private static ObjectMapper objectMapper() {
         return new ObjectMapper()
-                //.registerModule(new JavaTimeModule())
+                .registerModule(new JavaTimeModule())
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

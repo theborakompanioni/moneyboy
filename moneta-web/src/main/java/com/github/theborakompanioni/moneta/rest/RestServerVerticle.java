@@ -1,10 +1,13 @@
 package com.github.theborakompanioni.moneta.rest;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.net.MediaType;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.AbstractVerticle;
 import io.vertx.rxjava.core.http.HttpServer;
@@ -18,6 +21,14 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 
 @Slf4j
 public class RestServerVerticle extends AbstractVerticle {
+
+    static {
+        Json.mapper.registerModule(new JavaTimeModule());
+        Json.mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        Json.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        Json.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
     private static final String JSON_TYPE = MediaType.JSON_UTF_8.withoutParameters().toString();
 
     private final String name = this.getClass().getSimpleName();

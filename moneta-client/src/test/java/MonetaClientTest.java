@@ -70,6 +70,7 @@ public class MonetaClientTest {
         Observable.just(api.exchangerateLatest())
                 .subscribe(next -> {
                     assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getRates(), hasSize(greaterThan(30)));
 
                 }, context::fail, async::complete);
@@ -83,6 +84,7 @@ public class MonetaClientTest {
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getRates(), hasSize(1));
                     assertThat(next.getRates().get(0).getTarget(), is(equalTo("USD")));
 
@@ -98,6 +100,7 @@ public class MonetaClientTest {
         Observable.just(api.exchangerateLatest("EUR", targets))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
+                    assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getBase(), is(equalTo("EUR")));
                     assertThat(next.getRates(), hasSize(targets.size()));
 
@@ -117,6 +120,7 @@ public class MonetaClientTest {
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
                     assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getDate(), is(equalTo(date)));
                     assertThat(next.getRates(), hasSize(targets.size()));
 
                     assertThat(next.getRates().get(0).getTarget(), is(equalTo(targets.get(0))));
