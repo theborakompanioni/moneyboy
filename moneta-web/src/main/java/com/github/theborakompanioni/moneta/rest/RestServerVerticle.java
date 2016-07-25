@@ -81,7 +81,7 @@ public class RestServerVerticle extends AbstractVerticle {
                 .produces(JSON_TYPE);
 
         router.route("/api").handler(api());
-        router.mountSubRouter("/api/exchangerate", ExchangeRateRouter.create(vertx));
+        router.mountSubRouter("/api/exchange", ExchangeRateRouter.create(vertx));
 
         router.route().handler(notFoundHandler());
 

@@ -16,37 +16,37 @@ public interface MonetaClient {
     @RequestLine("GET /api")
     Map<String, Object> api();
 
-    @RequestLine("GET /api/exchangerate/latest")
+    @RequestLine("GET /api/exchange/latest")
     ExchangeRateResponse latest();
 
-    @RequestLine("GET /api/exchangerate/latest?base={base}")
+    @RequestLine("GET /api/exchange/latest?base={base}")
     ExchangeRateResponse latest(@Param(value = "base") String base);
 
-    @RequestLine("GET /api/exchangerate/latest?base={base}&target={target}")
+    @RequestLine("GET /api/exchange/latest?base={base}&target={target}")
     ExchangeRateResponse latest(
             @Param(value = "base") String base,
             @Param(value = "target") String target);
 
-    @RequestLine("GET /api/exchangerate/latest?base={base}&target={targets}")
+    @RequestLine("GET /api/exchange/latest?base={base}&target={targets}")
     ExchangeRateResponse latest(
             @Param(value = "base") String base,
             @Param(value = "targets") List<String> targets);
 
-    @RequestLine("GET /api/exchangerate/{date}")
+    @RequestLine("GET /api/exchange/{date}")
     ExchangeRateResponse historic(@Param(value = "date") LocalDate date);
 
-    @RequestLine("GET /api/exchangerate/{date}?base={base}")
+    @RequestLine("GET /api/exchange/{date}?base={base}")
     ExchangeRateResponse historic(
             @Param(value = "date") LocalDate date,
             @Param(value = "base") String base);
 
-    @RequestLine("GET /api/exchangerate/{date}?base={base}&target={target}")
+    @RequestLine("GET /api/exchange/{date}?base={base}&target={target}")
     ExchangeRateResponse historic(
             @Param(value = "date") LocalDate date,
             @Param(value = "base") String base,
             @Param(value = "target") String target);
 
-    @RequestLine("GET /api/exchangerate/{date}?base={base}&target={targets}")
+    @RequestLine("GET /api/exchange/{date}?base={base}&target={targets}")
     ExchangeRateResponse historic(
             @Param(value = "date") LocalDate date,
             @Param(value = "base") String base,

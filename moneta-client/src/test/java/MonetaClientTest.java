@@ -80,13 +80,13 @@ public class MonetaClientTest {
     public void itShouldFetchExchangeRateWithTarget(TestContext context) {
         final Async async = context.async();
 
-        Observable.just(api.latest("EUR", "USD"))
+        Observable.just(api.latest("USD", "EUR"))
                 .subscribe(next -> {
                     assertThat(next, is(notNullValue()));
-                    assertThat(next.getBase(), is(equalTo("EUR")));
+                    assertThat(next.getBase(), is(equalTo("USD")));
                     assertThat(next.getDate(), is(equalTo(LocalDate.now())));
                     assertThat(next.getRates(), hasSize(1));
-                    assertThat(next.getRates().get(0).getTarget(), is(equalTo("USD")));
+                    assertThat(next.getRates().get(0).getTarget(), is(equalTo("EUR")));
 
                     log.info("{}", Json.encode(next));
 
@@ -130,6 +130,8 @@ public class MonetaClientTest {
 
                     assertThat(next.getRates().get(1).getTarget(), is(equalTo(targets.get(1))));
                     assertThat(next.getRates().get(1).getType(), is("HISTORIC"));
+
+                    log.info("{}", Json.encode(next));
 
                 }, context::fail, async::complete);
     }
