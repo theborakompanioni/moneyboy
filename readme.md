@@ -1,7 +1,7 @@
-abby
+moneta
 ===============
 
-ABB test server.
+Currency Exchange Rates via REST.
 
 
 ## Build
@@ -23,3 +23,6 @@ mvn test
 mvn clean install package
 java -jar abby-boot/target/abby-boot-${version}-fat.jar -conf bin/sample-conf.json
 ```
+
+## Links
+https://otaviojava.gitbooks.io/money-api
