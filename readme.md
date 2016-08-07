@@ -1,6 +1,6 @@
-moneta
+moneyboy
 ===============
-Moneta is an API for current and historical currency exchange rates.
+moneyboy is an API for current and historical currency exchange rates.
 
 ## Build
 
@@ -19,7 +19,7 @@ mvn test
 ## Run
 ```
 mvn clean install package
-java -jar abby-boot/target/abby-boot-${version}-fat.jar -conf bin/sample-conf.json
+java -jar moneyboy-boot/target/moneyboy-boot-${version}-fat.jar -conf bin/sample-conf.json
 ```
 
 ## API
