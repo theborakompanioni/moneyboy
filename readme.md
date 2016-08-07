@@ -26,7 +26,7 @@ java -jar moneyboy-boot/target/moneyboy-boot-${version}-fat.jar -conf bin/sample
 Get the latest foreign exchange reference rates.
 Request specific exchange rates by setting the `target` parameter. 
 ```
-GET /api/latest&target=USD
+GET /api/latest?target=USD
 {
   "base" : "EUR",
   "date" : "2016-07-25",
@@ -47,7 +47,7 @@ Rates are quoted against the Euro by default.
 Quote against a different currency by setting the base parameter in your request.
 
 ```
-GET /api/latest&base=USD&target=EUR
+GET /api/latest?base=USD&target=EUR
 {
   "base" : "USD",
   "date" : "2016-07-25",
